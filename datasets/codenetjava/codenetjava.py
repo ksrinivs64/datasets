@@ -109,7 +109,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # It can accept any type or nested list/dict and will give back the same structure with the url replaced with path to local files.
         # By default the archives will be extracted and a path to a cached folder where they are extracted is returned instead of the archive
         my_urls = file_URLs[self.config.name]
-        data_dir = dl_manager.data_dir
+        data_dir = dl_manager.manual_dir
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
@@ -138,7 +138,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         ]
 
     def _generate_examples(self, filepath, split):
-        data_dir = self.dl_manager.data_dir
+        data_dir = self.dl_manager.manual_dir
         """ Yields examples. """
         # TODO: This method will receive as arguments the `gen_kwargs` defined in the previous `_split_generators` method.
         # It is in charge of opening the given file and yielding (key, example) tuples from the dataset
