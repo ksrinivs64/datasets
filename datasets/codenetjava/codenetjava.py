@@ -49,7 +49,8 @@ _LICENSE = ""
 # The HuggingFace dataset library don't host the datasets but only point to the original files
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
 file_URLs = {
-    'codenetjava': "java_small.tar.bz2"
+    'codenetjava': "java.tar.bz2",
+    'codenetjava-small': "java_small.tar.bz2"
 }
 
 
@@ -71,13 +72,14 @@ class codenetjava(datasets.GeneratorBasedBuilder):
     # data = datasets.load_dataset('my_dataset', 'first_domain')
     # data = datasets.load_dataset('my_dataset', 'second_domain')
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="codenetjava", version=VERSION, description="download the entire Java codenet dataset")    ]
+        datasets.BuilderConfig(name="codenetjava", version=VERSION, description="download the entire Java codenet dataset"),
+        datasets.BuilderConfig(name="codenetjava-small", version=VERSION, description="download a sample Java codenet dataset")]
 
     DEFAULT_CONFIG_NAME = "codenetjava"  # It's not mandatory to have a default configuration. Just use one if it make sense.
 
     def _info(self):
         # TODO: This method specifies the datasets.DatasetInfo object which contains informations and typings for the dataset
-        if self.config.name == "codenetjava":  # This is the name of the configuration selected in BUILDER_CONFIGS above
+        if self.config.name == "codenetjava" or self.config.name == "codenetjava-small":  # This is the name of the configuration selected in BUILDER_CONFIGS above
             features = datasets.Features(
                 {
                     "code": datasets.Value("string")
@@ -110,12 +112,15 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # By default the archives will be extracted and a path to a cached folder where they are extracted is returned instead of the archive
         my_urls = file_URLs[self.config.name]
         data_dir = dl_manager.manual_dir
+        train = 'train.txt' if self.config.name == 'codenetjava' else 'small_train.txt'
+        test = 'test.txt' if self.config.name == 'codenetjava' else 'small_test.txt'
+        dev = 'dev.txt' if self.config.name == 'codenetjava' else 'small_dev.txt'
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "small_train.txt"),
+                    "filepath": os.path.join(data_dir, train),
                     "split": "train",
                 },
             ),
@@ -123,7 +128,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.TEST,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "small_test.txt"),
+                    "filepath": os.path.join(data_dir, test),
                     "split": "test"
                 },
             ),
@@ -131,7 +136,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, "small_dev.txt"),
+                    "filepath": os.path.join(data_dir, dev),
                     "split": "dev",
                 },
             ),
@@ -143,11 +148,11 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # TODO: This method will receive as arguments the `gen_kwargs` defined in the previous `_split_generators` method.
         # It is in charge of opening the given file and yielding (key, example) tuples from the dataset
         # The key is not important, it's more here for legacy reason (legacy from tfds)
-        with tarfile.open(os.path.join(data_dir, file_URLs['codenetjava']), 'r:bz2') as f:
+        with tarfile.open(os.path.join(data_dir, file_URLs[self.config.name]), 'r:bz2') as f:
             with open(filepath, encoding="utf-8") as jf:
                 for id_, row in enumerate(jf):
                     code = f.extractfile(row.strip()).read()
-                    if self.config.name == "codenetjava":
+                    if self.config.name == "codenetjava" or self.config.name == 'codenetjava-small':
                         yield id_, {
                             "code": code
                         }
