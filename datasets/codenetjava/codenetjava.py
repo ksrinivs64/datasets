@@ -144,11 +144,14 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # TODO: This method will receive as arguments the `gen_kwargs` defined in the previous `_split_generators` method.
         # It is in charge of opening the given file and yielding (key, example) tuples from the dataset
         # The key is not important, it's more here for legacy reason (legacy from tfds)
-        with tarfile.open(os.path.join(filepath, 'r')) as tar:
-            for id, member in enumerate(tar.getmembers()):
-                code=tar.extractfile(member).read()
-                yield id_, {
-                    "code": code
-                }
+        i=0
+        with tarfile.open(filepath, 'r') as tar:
+            for member in tar.getmembers():
+                if member.isfile():
+                    code=tar.extractfile(member).read()
+                    i += 1
+                    yield i, {
+                        "code": code
+                    }
 
         
