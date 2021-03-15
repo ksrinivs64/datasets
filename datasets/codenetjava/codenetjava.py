@@ -49,8 +49,7 @@ _LICENSE = ""
 # The HuggingFace dataset library don't host the datasets but only point to the original files
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
 file_URLs = {
-    'codenetjava': "java.tar.bz2",
-    'codenetjava-small': "java_small.tar.bz2"
+    'codenetjava': "java"
 }
 
 
@@ -110,17 +109,14 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # dl_manager is a datasets.download.DownloadManager that can be used to download and extract URLs
         # It can accept any type or nested list/dict and will give back the same structure with the url replaced with path to local files.
         # By default the archives will be extracted and a path to a cached folder where they are extracted is returned instead of the archive
-        my_urls = file_URLs[self.config.name]
+        my_url = file_URLs[self.config.name] 
         data_dir = dl_manager.manual_dir
-        train = 'train.txt' if self.config.name == 'codenetjava' else 'small_train.txt'
-        test = 'test.txt' if self.config.name == 'codenetjava' else 'small_test.txt'
-        dev = 'dev.txt' if self.config.name == 'codenetjava' else 'small_dev.txt'
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, train),
+                    "filepath": os.path.join(data_dir, my_url + '.train.tar'),
                     "split": "train",
                 },
             ),
@@ -128,7 +124,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.TEST,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, test),
+                    "filepath": os.path.join(data_dir, my_url + '.test.tar'),
                     "split": "test"
                 },
             ),
@@ -136,7 +132,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir, dev),
+                    "filepath": os.path.join(data_dir, my_url + '.dev.tar'),
                     "split": "dev",
                 },
             ),
@@ -148,11 +144,11 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         # TODO: This method will receive as arguments the `gen_kwargs` defined in the previous `_split_generators` method.
         # It is in charge of opening the given file and yielding (key, example) tuples from the dataset
         # The key is not important, it's more here for legacy reason (legacy from tfds)
-        with tarfile.open(os.path.join(data_dir, file_URLs[self.config.name]), 'r:bz2') as f:
-            with open(filepath, encoding="utf-8") as jf:
-                for id_, row in enumerate(jf):
-                    code = f.extractfile(row.strip()).read()
-                    if self.config.name == "codenetjava" or self.config.name == 'codenetjava-small':
-                        yield id_, {
-                            "code": code
-                        }
+        with tarfile.open(os.path.join(filepath, 'r')) as tar:
+            for id, member in enumerate(tar.getmembers()):
+                code=tar.extractfile(member).read()
+                yield id_, {
+                    "code": code
+                }
+
+        
