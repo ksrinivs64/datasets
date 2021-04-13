@@ -143,8 +143,8 @@ class codenetjava(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, filepath, split):
         problems2files = {}
         problems_files2code = {}
-        negative_sample_size = 100
-        positive_sample_size = 100
+        negative_sample_size = 10000
+        positive_sample_size = 10000
         self.length = negative_sample_size + positive_sample_size
         with tarfile.open(filepath, "r") as tar:
             for tarinfo in tar:
@@ -211,7 +211,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 all_pairs.append((0, i))
 
             for i, example in enumerate(all_pairs):
-                print(example)
+                #print(example)
                 yield i, {
                     "code1": example[1][0],
                     "code2": example[1][1],
