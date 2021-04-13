@@ -78,7 +78,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
 
     def _info(self):
         # TODO: This method specifies the datasets.DatasetInfo object which contains informations and typings for the dataset
-        if self.config.name == "codenetjava" or self.config.name == "codenetjava-small":  # This is the name of the configuration selected in BUILDER_CONFIGS above
+        if self.config.name == "codenetjava_classify":  # This is the name of the configuration selected in BUILDER_CONFIGS above
             features = datasets.Features(
                 {
                     "code1": datasets.Value("string"),
