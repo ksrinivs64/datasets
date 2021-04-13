@@ -210,7 +210,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
             for i in negative_code_pairs:
                 all_pairs.append((0, i))
 
-            for i, example in all_pairs:
+            for i, example in enumerate(all_pairs):
                 print(example)
                 yield i, {
                     "code1": example[1][0],
