@@ -211,6 +211,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 all_pairs.append((0, i))
 
             for i, example in all_pairs:
+                print(example)
                 yield i, {
                     "code1": example[1][0],
                     "code2": example[1][1],
