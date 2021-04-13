@@ -83,7 +83,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
                 {
                     "code1": datasets.Value("string"),
                     "code2": datasets.Value("string"),
-                    "label": datasets.Value("int"),
+                    "label": datasets.Value("int32"),
                 }
             )
         return datasets.DatasetInfo(
@@ -212,8 +212,10 @@ class codenetjava(datasets.GeneratorBasedBuilder):
 
             for i, example in all_pairs:
                 yield i, {
-                    "code1": example[0],
-                    "code2": example[1]
+                    "code1": example[1][0],
+                    "code2": example[1][1],
+                    "label" : example[0]
+
                 }
 
         
