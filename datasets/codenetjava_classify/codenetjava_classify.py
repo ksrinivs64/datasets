@@ -210,6 +210,8 @@ class codenetjava(datasets.GeneratorBasedBuilder):
             for i in negative_code_pairs:
                 all_pairs.append((0, i))
 
+            random.shuffle(all_pairs)
+
             for i, example in enumerate(all_pairs):
                 #print(example)
                 yield i, {
