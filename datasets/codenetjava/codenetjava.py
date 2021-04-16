@@ -49,7 +49,8 @@ _LICENSE = ""
 # The HuggingFace dataset library don't host the datasets but only point to the original files
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
 file_URLs = {
-    'codenetjava': "java"
+    'codenetjava': "java",
+    'codenetjava-classify': "java-classify"
 }
 
 
@@ -148,7 +149,14 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         with tarfile.open(filepath, 'r') as tar:
             for member in tar.getmembers():
                 if member.isfile():
-                    code=tar.extractfile(member).read()
+                    code = tar.extractfile(member).readlines()
+                    modified_code = []
+                    for l in code:
+                        s = l.decode()
+                        if s == '':
+                            continue
+                        modified_code.append(s.strip())
+                    code = ' '.join(modified_code)
                     i += 1
                     yield i, {
                         "code": code
