@@ -169,7 +169,7 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         negative_sample_size = 10000
         positive_sample_size = 10000
         self.length = negative_sample_size + positive_sample_size
-        problems_files2code, problems2files = reversed(filepath)
+        problems_files2code, problems2files = read_tar(filepath)
         # create a set of examples by simply sampling from each 'problem set' for positives and
         # negatives by pairing problems from different problem sets
         desired_positive_sample_size = positive_sample_size
