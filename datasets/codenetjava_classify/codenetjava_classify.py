@@ -53,6 +53,30 @@ file_URLs = {
 }
 
 
+def read_tar(filepath):
+    problems_files2code = {}
+    problems2files = {}
+    with tarfile.open(filepath, "r") as tar:
+        for tarinfo in tar:
+            arr = tarinfo.name.split('/')
+
+            if arr[4] not in problems2files:
+                problems2files[arr[4]] = []
+            code = tar.extractfile(tarinfo).readlines()
+            modified_code = []
+            for l in code:
+                s = l.decode()
+                if s == '':
+                    continue
+                modified_code.append(s.strip())
+            code = ' '.join(modified_code)
+            # print(code)
+            problems2files[arr[4]].append(tarinfo.name)
+            problems_files2code[tarinfo.name] = code
+
+    return problems_files2code, problems2files
+
+
 # TODO: Name of the dataset usually match the script name with CamelCase instead of snake_case
 class codenetjava(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
@@ -141,84 +165,77 @@ class codenetjava(datasets.GeneratorBasedBuilder):
         ]
 
     def _generate_examples(self, filepath, split):
-        problems2files = {}
-        problems_files2code = {}
+
         negative_sample_size = 10000
         positive_sample_size = 10000
         self.length = negative_sample_size + positive_sample_size
-        with tarfile.open(filepath, "r") as tar:
-            for tarinfo in tar:
-                arr = tarinfo.name.split('/')
+        problems_files2code, problems2files = reversed(filepath)
+        # create a set of examples by simply sampling from each 'problem set' for positives and
+        # negatives by pairing problems from different problem sets
+        desired_positive_sample_size = positive_sample_size
+        desired_negative_sample_size = negative_sample_size
+        l = list(problems2files.keys())
 
-                if arr[4] not in problems2files:
-                    problems2files[arr[4]] = []
-                code = tar.extractfile(tarinfo).read()
-                problems2files[arr[4]].append(tarinfo.name)
-                problems_files2code[tarinfo.name] = str(code)
+        problem_pairs = set()
+        positive_code_pairs = []
+        negative_code_pairs = []
 
-            # create a set of examples by simply sampling from each 'problem set' for positives and
-            # negatives by pairing problems from different problem sets
-            desired_positive_sample_size = positive_sample_size
-            desired_negative_sample_size = negative_sample_size
-            l = list(problems2files.keys())
+        for k in problems2files:
+            problems = problems2files[k]
+            chosen = 0
+            sample_per_problem = int(desired_positive_sample_size / len(l))
 
-            problem_pairs = set()
-            positive_code_pairs = []
-            negative_code_pairs = []
+            while chosen <= sample_per_problem:
+                problem_pair = random.sample(problems, 2)
+                problem_pair.sort()
+                key = '-'.join(problem_pair)
+                if key in problem_pairs:
+                    continue
+                problem_pairs.add(key)
+                print('positive pair:' + key)
+                positive_code_pairs.append(
+                    (problems_files2code[problem_pair[0]], problems_files2code[problem_pair[1]]))
+                chosen += 1
+            chosen = 0
 
-            for k in problems2files:
-                problems = problems2files[k]
-                chosen = 0
-                sample_per_problem = int(desired_positive_sample_size / len(l))
+            sample_per_problem = int(desired_negative_sample_size / len(l))
 
-                while chosen <= sample_per_problem:
-                    problem_pair = random.sample(problems, 2)
-                    problem_pair.sort()
-                    key = '-'.join(problem_pair)
-                    if key in problem_pairs:
-                        continue
-                    problem_pairs.add(key)
-                    print('positive pair:' + key)
-                    positive_code_pairs.append(
-                        (problems_files2code[problem_pair[0]], problems_files2code[problem_pair[1]]))
-                    chosen += 1
-                chosen = 0
+            while chosen <= sample_per_problem:
+                problem_1 = random.sample(problems, 1)[0]
+                negative = k
+                while negative == k:
+                    negative = random.randint(0, len(problems2files.keys()) - 1)
 
-                sample_per_problem = int(desired_negative_sample_size / len(l))
+                problems = problems2files[list(problems2files.keys())[negative]]
+                problem_2 = random.sample(problems, 1)[0]
+                problem_pair = [problem_1, problem_2]
 
-                while chosen <= sample_per_problem:
-                    problem_1 = random.sample(problems, 1)[0]
-                    negative = k
-                    while negative == k:
-                        negative = random.randint(0, len(problems2files.keys()) - 1)
+                key = '-'.join(problem_pair)
+                if key in problem_pairs:
+                    continue
+                print('negative pair:' + key)
+                problem_pairs.add(key)
+                negative_code_pairs.append(
+                    (problems_files2code[problem_pair[0]], problems_files2code[problem_pair[1]]))
+                chosen += 1
+        all_pairs = []
+        for i in positive_code_pairs:
+            all_pairs.append((1, i))
+        for i in negative_code_pairs:
+            all_pairs.append((0, i))
 
-                    problems = problems2files[list(problems2files.keys())[negative]]
-                    problem_2 = random.sample(problems, 1)[0]
-                    problem_pair = [problem_1, problem_2]
+        random.shuffle(all_pairs)
 
-                    key = '-'.join(problem_pair)
-                    if key in problem_pairs:
-                        continue
-                    print('negative pair:' + key)
-                    problem_pairs.add(key)
-                    negative_code_pairs.append(
-                        (problems_files2code[problem_pair[0]], problems_files2code[problem_pair[1]]))
-                    chosen += 1
-            all_pairs = []
-            for i in positive_code_pairs:
-                all_pairs.append((1, i))
-            for i in negative_code_pairs:
-                all_pairs.append((0, i))
+        for i, example in enumerate(all_pairs):
+            #print(example)
+            yield i, {
+                "code1": example[1][0],
+                "code2": example[1][1],
+                "label" : example[0]
+            }
 
-            random.shuffle(all_pairs)
+def main():
+    read_tar('/Users/kavithasrinivas/ibmcode/ai-for-code/datasets/CodeNet/java.test.tar')
 
-            for i, example in enumerate(all_pairs):
-                #print(example)
-                yield i, {
-                    "code1": example[1][0],
-                    "code2": example[1][1],
-                    "label" : example[0]
-
-                }
-
-        
+if __name__ == "__main__":
+    main()
